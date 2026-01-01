@@ -2,66 +2,541 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Ask AI</title>
+    <title>AI 챗봇 - 마스터 에이전트</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+        }
+
+        .chat-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .chat-header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .intent-result {
+            background: #667eea;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 85%;
+            padding: 12px 18px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .intent-badge {
+            display: inline-block;
+            background: #f0f0f0;
+            color: #667eea;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            background: #e8f5e9;
+            color: #4caf50;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #messageInput:focus {
+            border-color: #667eea;
+        }
+
+        .send-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:active {
+            transform: translateY(0);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            padding: 10px 18px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 18px;
+            width: 60px;
+        }
+
+        .typing-indicator.active {
+            display: block;
+        }
+
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            background: #667eea;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .quick-action-btn {
+            background: #f0f0f0;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .quick-action-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .admin-panel {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-btn {
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 10px;
+        }
+
+        .admin-btn:hover {
+            background: #45a049;
+        }
+
+        .admin-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .admin-btn.status {
+            background: #2196F3;
+        }
+
+        .admin-btn.status:hover {
+            background: #0b7dda;
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: #666;
+            margin-left: 10px;
+        }
+
+        .status-success {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .status-error {
+            color: #f44336;
+            font-weight: 600;
+        }
+    </style>
 </head>
 <body>
-<div class="container mt-5">
-    <h2 class="text-center">Ask AI</h2>
-    <div class="form-group">
-        <label for="question">질문을 입력하세요:</label>
-        <input type="text" id="question" class="form-control" placeholder="질문 입력">
+<div class="chat-container">
+    <div class="chat-header">
+        <h2>AI 마스터 에이전트</h2>
+        <p>다양한 금융 서비스 인텐트 조회</p>
     </div>
-    <button class="btn btn-primary mt-2" onclick="getResponse()">Ask</button>
-    <button class="btn btn-secondary mt-2" onclick="getResponseOptions()">Ask with Options</button>
 
-    <div class="mt-4">
-        <div id="response" class="alert alert-info" role="alert" style="display: none;"></div>
+    <div class="admin-panel">
+        <div>
+            <button class="admin-btn" id="initIndexBtn" onclick="initializeIndex()">데이터 색인</button>
+            <button class="admin-btn status" id="checkStatusBtn" onclick="checkIndexStatus()">상태 확인</button>
+        </div>
+        <div>
+            <span class="status-text" id="statusText">인덱스 상태: 확인 필요</span>
+        </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        <div class="message bot">
+            <div class="message-content">
+                안녕하세요! 질문을 입력하시면 인텐트를 분류해드립니다.<br>
+                현재 분류 가능한 인텐트: 카드추천, 카드안내, 이벤트안내, 금융대출, 자동이체, 거래내역, 실비, 핫딜구매
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-input-container">
+        <div class="quick-actions">
+            <button class="quick-action-btn" onclick="sendQuickMessage('카드 추천해줘')">카드추천</button>
+            <button class="quick-action-btn" onclick="sendQuickMessage('이벤트 알려줘')">이벤트</button>
+            <button class="quick-action-btn" onclick="sendQuickMessage('대출 상담')">대출상담</button>
+            <button class="quick-action-btn" onclick="sendQuickMessage('거래내역 보기')">거래내역</button>
+            <button class="quick-action-btn" onclick="sendQuickMessage('핫딜 정보')">핫딜</button>
+        </div>
+        <div class="input-group">
+            <input type="text" id="messageInput" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
+            <button class="send-button" id="sendButton" onclick="sendMessage()">전송</button>
+        </div>
     </div>
 </div>
 
 <script>
-    async function getResponse() {
-        const question = document.getElementById('question').value;
-        if (question.trim() === '') {
-            alert('질문을 입력하세요');
-            return;
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+
+    function addMessage(content, isUser, intent = null, confidence = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+
+        const messageContent = document.createElement('div');
+        messageContent.className = 'message-content';
+
+        if (!isUser && intent) {
+            const intentBadge = document.createElement('div');
+            intentBadge.className = 'intent-badge';
+            intentBadge.textContent = getIntentKoreanName(intent);
+
+            if (confidence) {
+                const confidenceBadge = document.createElement('span');
+                confidenceBadge.className = 'confidence-badge';
+                confidenceBadge.textContent = `신뢰도: ${(confidence * 100).toFixed(0)}%`;
+                intentBadge.appendChild(confidenceBadge);
+            }
+
+            messageContent.appendChild(intentBadge);
+            messageContent.innerHTML += '<br>';
         }
 
-        const responseDiv = document.getElementById('response');
-        responseDiv.innerText = '응답이 생성중입니다...';
-        responseDiv.style.display = 'block';
+        const textNode = document.createTextNode(content);
+        messageContent.appendChild(textNode);
 
-        try {
-            const response = await fetch(`/ask?message=${encodeURIComponent(question)}`);
-            const result = await response.text();
-            responseDiv.innerText = result;
-        } catch (error) {
-            console.error('Error:', error);
-            responseDiv.innerText = '오류가 발생했습니다.';
+        messageDiv.appendChild(messageContent);
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'message bot';
+        typingDiv.id = 'typingIndicator';
+
+        const typingContent = document.createElement('div');
+        typingContent.className = 'typing-indicator active';
+        typingContent.innerHTML = '<span></span><span></span><span></span>';
+
+        typingDiv.appendChild(typingContent);
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const typingIndicator = document.getElementById('typingIndicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
         }
     }
 
-    async function getResponseOptions() {
-        const question = document.getElementById('question').value;
-        if (question.trim() === '') {
-            alert('질문을 입력하세요');
+    function getIntentKoreanName(intent) {
+        const intentMap = {
+            'CARD_RECOMMENDATION': '카드추천',
+            'CARD_GUIDE': '카드안내',
+            'EVENT_INFO': '이벤트안내',
+            'FINANCIAL_LOAN': '금융대출',
+            'AUTO_TRANSFER': '자동이체',
+            'TRANSACTION_HISTORY': '거래내역',
+            'ACTUAL_EXPENSE': '실비',
+            'HOT_DEAL': '핫딜구매',
+            'UNKNOWN': '알수없음'
+        };
+        return intentMap[intent] || intent;
+    }
+
+    async function sendMessage() {
+        const message = messageInput.value.trim();
+        if (message === '') {
             return;
         }
 
-        const responseDiv = document.getElementById('response');
-        responseDiv.innerText = '응답이 생성중입니다...';
-        responseDiv.style.display = 'block';
+        addMessage(message, true);
+        messageInput.value = '';
+        sendButton.disabled = true;
+
+        addTypingIndicator();
 
         try {
-            const response = await fetch(`/ask-ai?message=${encodeURIComponent(question)}`);
-            const result = await response.text();
-            responseDiv.innerText = result;
+            const response = await fetch(`/master-agent?message=${encodeURIComponent(message)}`);
+            const result = await response.json();
+
+            removeTypingIndicator();
+
+            addMessage(result.response, false, result.intent, result.confidence);
         } catch (error) {
             console.error('Error:', error);
-            responseDiv.innerText = '오류가 발생했습니다.';
+            removeTypingIndicator();
+            addMessage('죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.', false);
+        } finally {
+            sendButton.disabled = false;
+            messageInput.focus();
         }
     }
+
+    function sendQuickMessage(message) {
+        messageInput.value = message;
+        sendMessage();
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    }
+
+    messageInput.focus();
+
+    let progressInterval = null;
+
+    async function initializeIndex() {
+        const initBtn = document.getElementById('initIndexBtn');
+        const statusText = document.getElementById('statusText');
+
+        initBtn.disabled = true;
+        statusText.textContent = '데이터 색인 시작...';
+        statusText.className = 'status-text';
+
+        startProgressPolling();
+
+        try {
+            const response = await fetch('/admin/index/init', {
+                method: 'POST'
+            });
+            const result = await response.json();
+
+            stopProgressPolling();
+
+            if (result.status === 'success') {
+                statusText.textContent = result.message;
+                statusText.className = 'status-text status-success';
+                setTimeout(() => checkIndexStatus(), 1000);
+            } else {
+                statusText.textContent = '색인 실패: ' + result.message;
+                statusText.className = 'status-text status-error';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            stopProgressPolling();
+            statusText.textContent = '색인 중 오류 발생';
+            statusText.className = 'status-text status-error';
+        } finally {
+            initBtn.disabled = false;
+        }
+    }
+
+    function startProgressPolling() {
+        progressInterval = setInterval(async () => {
+            try {
+                const response = await fetch('/admin/index/progress');
+                const progress = await response.json();
+
+                const statusText = document.getElementById('statusText');
+
+                if (progress.isIndexing) {
+                    statusText.textContent = `색인 중: ${progress.currentCount}/${progress.totalCount}개 - ${progress.message}`;
+                    statusText.className = 'status-text';
+                }
+            } catch (error) {
+                console.error('Progress polling error:', error);
+            }
+        }, 500);
+    }
+
+    function stopProgressPolling() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+    }
+
+    async function checkIndexStatus() {
+        const statusBtn = document.getElementById('checkStatusBtn');
+        const statusText = document.getElementById('statusText');
+
+        statusBtn.disabled = true;
+        statusText.textContent = '상태 확인 중...';
+        statusText.className = 'status-text';
+
+        try {
+            const response = await fetch('/admin/index/status');
+            const result = await response.json();
+
+            if (result.status === 'success') {
+                statusText.textContent = `인덱스 문서 수: ${result.documentCount}개`;
+                statusText.className = 'status-text status-success';
+            } else {
+                statusText.textContent = '상태 확인 실패: ' + result.message;
+                statusText.className = 'status-text status-error';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            statusText.textContent = '상태 확인 중 오류 발생';
+            statusText.className = 'status-text status-error';
+        } finally {
+            statusBtn.disabled = false;
+        }
+    }
+
+    window.addEventListener('load', function() {
+        checkIndexStatus();
+    });
 </script>
 
 </body>

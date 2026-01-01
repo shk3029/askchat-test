@@ -2,7 +2,13 @@
   "permissions": {
     "allow": [
       "Bash(git remote set-url:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(echo $OPENAI_API_KEY)",
+      "Bash(source:*)",
+      "Bash(./gradlew bootRun:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
